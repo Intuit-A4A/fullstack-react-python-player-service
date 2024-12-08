@@ -1,0 +1,311 @@
+openapi: 3.0.0
+info:
+  title: Player Service API
+  description: API for baseball player information and team generation
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080/v1
+    description: Local development server
+
+components:
+  schemas:
+    Player:
+      type: object
+      properties:
+        playerId:
+          type: string
+          example: "aaronha01"
+        birthYear:
+          type: number
+          format: float
+          example: 1934.0
+        birthMonth:
+          type: number
+          format: float
+          example: 2.0
+        birthDay:
+          type: number
+          format: float
+          example: 5.0
+        birthCountry:
+          type: string
+          example: "USA"
+        birthState:
+          type: string
+          example: "AL"
+        birthCity:
+          type: string
+          example: "Mobile"
+        nameLast:
+          type: string
+          example: "Aaron"
+        nameGiven:
+          type: string
+          example: "Henry Louis"
+        weight:
+          type: number
+          format: float
+          example: 180.0
+        height:
+          type: number
+          format: float
+          example: 72.0
+        bats:
+          type: string
+          enum: [R, L, N]
+          example: "R"
+        throws:
+          type: string
+          enum: [R, L, N]
+          example: "R"
+        debut:
+          type: string
+          format: date
+          example: "1954-04-13"
+        finalGame:
+          type: string
+          format: date
+          example: "1976-10-03"
+
+    Features:
+      type: object
+      properties:
+        birth_year:
+          type: number
+          format: float
+        height:
+          type: number
+          format: float
+        weight:
+          type: number
+          format: float
+        bats:
+          type: string
+          enum: [L, R, N]
+        throws:
+          type: string
+          enum: [L, R, N]
+
+    TeamGenerateInput:
+      type: object
+      required:
+        - team_size
+      properties:
+        seed_id:
+          type: string
+          example: "aaronha01"
+        features:
+          $ref: '#/components/schemas/Features'
+        team_size:
+          type: integer
+          minimum: 1
+          example: 5
+
+    TeamGenerateOutput:
+      type: object
+      properties:
+        seed_id:
+          type: string
+        prediction_id:
+          type: string
+          format: uuid
+        team_size:
+          type: integer
+        member_ids:
+          type: array
+          items:
+            type: string
+
+    TeamFeedbackInput:
+      type: object
+      required:
+        - seed_id
+        - member_id
+        - feedback
+      properties:
+        seed_id:
+          type: string
+        member_id:
+          type: string
+        feedback:
+          type: integer
+          enum: [-1, 1]
+
+    TeamFeedbackOutput:
+      type: object
+      properties:
+        seed_id:
+          type: string
+        prediction_id:
+          type: string
+          format: uuid
+        member_id:
+          type: string
+        accepted:
+          type: boolean
+
+    ChatInput:
+      type: object
+      required:
+        - user_prompt
+      properties:
+        system_prompt:
+          type: string
+        user_prompt:
+          type: string
+
+    ChatOutput:
+      type: object
+      properties:
+        response:
+          type: string
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+
+paths:
+  /players:
+    get:
+      summary: Get all players
+      description: Retrieves a list of all baseball players
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  players:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Player'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /players/{playerId}:
+    get:
+      summary: Get player by ID
+      description: Retrieves a specific player by their ID
+      parameters:
+        - name: playerId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  player:
+                    $ref: '#/components/schemas/Player'
+        '404':
+          description: Player not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /team/generate:
+    post:
+      summary: Generate a team
+      description: Generates a team based on either a seed player or specific features
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamGenerateInput'
+      responses:
+        '200':
+          description: Team generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamGenerateOutput'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '408':
+          description: Request timeout
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /team/feedback:
+    post:
+      summary: Submit team feedback
+      description: Submit feedback about a generated team member
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TeamFeedbackInput'
+      responses:
+        '200':
+          description: Feedback processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TeamFeedbackOutput'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /chat/list-models:
+    get:
+      summary: List available chat models
+      description: Returns a list of available LLM models
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+
+  /chat:
+    post:
+      summary: Chat with the LLM
+      description: Send a message to the LLM and get a response
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatInput'
+      responses:
+        '200':
+          description: Chat response received
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatOutput'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
