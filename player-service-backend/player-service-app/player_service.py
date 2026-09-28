@@ -1,9 +1,11 @@
 import sqlite3
-from sqlalchemy import create_engine
+
+from app_paths import PLAYER_DB
+
 
 class PlayerService:
     def __init__(self):
-        conn = sqlite3.connect("player.db")
+        conn = sqlite3.connect(PLAYER_DB)
         self.conn = conn
         self.cursor = conn.cursor()
 
@@ -14,7 +16,7 @@ class PlayerService:
         response = []
 
         for player in players:
-            response.append(dict(zip(columns,player)))
+            response.append(dict(zip(columns, player)))
 
         return response
 
@@ -25,7 +27,6 @@ class PlayerService:
         response = []
 
         for player in players:
-            response.append(dict(zip(columns,player)))
+            response.append(dict(zip(columns, player)))
 
         return response
-
