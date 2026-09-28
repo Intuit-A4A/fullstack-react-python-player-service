@@ -31,3 +31,6 @@ ENV/
 env.bak/
 venv.bak/
 
+# Generated at runtime
+player-service-backend/player-service-app/player.db
+
